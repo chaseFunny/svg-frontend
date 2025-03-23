@@ -70,6 +70,14 @@ declare namespace API {
     style?: string;
     /** 宽高比例 */
     aspectRatio?: string;
+    /** 是否使用 thinking 模型进行生成 */
+    isThinking?: "base" | "thinking";
+    /** 图片数据（可以是 Base64 编码字符串、URL 或二进制数据） */
+    image?: Record<string, any>;
+    /** 文件数据（可以是 Base64 编码字符串、URL 或二进制数据） */
+    file?: Record<string, any>;
+    /** 生成类型，决定系统 prompt 和 prompt 内容 */
+    type?: string;
     /** Additional configuration parameters */
     configuration?: Record<string, any>;
   };
@@ -109,16 +117,16 @@ declare namespace API {
 
   type SvgGeneratorControllerFindGenerationsParams = {
     userId?: string;
-    /** 页码，默认为1 */
+    /** 页码，默认为 1 */
     page?: string;
-    /** 每页大小，默认为20，最大为24 */
+    /** 每页大小，默认为 20，最大为 24 */
     pageSize?: string;
   };
 
   type SvgGeneratorControllerFindPublicGenerationsParams = {
-    /** 页码，默认为1 */
+    /** 页码，默认为 1 */
     page?: string;
-    /** 每页大小，默认为20，最大为24 */
+    /** 每页大小，默认为 20，最大为 24 */
     pageSize?: string;
   };
 
@@ -189,3 +197,5 @@ declare namespace API {
     code: string;
   };
 }
+
+declare module "squoosh-compress";

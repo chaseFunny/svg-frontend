@@ -3,6 +3,7 @@
 import { DownloadButton } from "@/components/download-button";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { onCleanSvgContent } from "@/lib/formatSvg";
 import { svgGeneratorControllerGetVersions } from "@/services/svg/svgGenerations";
 import DOMPurify from "dompurify";
 import { ArrowLeftIcon, PencilIcon } from "lucide-react";
@@ -38,7 +39,7 @@ export function GenerationVersions({ generationId, onClose }: GenerationVersions
         setSelectedVersion(defaultData);
       }
     } catch (error) {
-      console.error("获取版本历史失败:", error);
+      console.error("获取版本历史失败：", error);
       toast.error("获取版本历史失败，请稍后重试");
     } finally {
       setLoading(false);
@@ -51,7 +52,7 @@ export function GenerationVersions({ generationId, onClose }: GenerationVersions
     }
   }, [generationId]);
 
-  // 安全处理SVG内容
+  // 安全处理 SVG 内容
   const sanitizeSvg = (svgContent: string) => {
     return DOMPurify.sanitize(svgContent, {
       USE_PROFILES: { svg: true, svgFilters: true },
@@ -105,7 +106,7 @@ export function GenerationVersions({ generationId, onClose }: GenerationVersions
               <div className="flex justify-between items-center">
                 <span className="font-medium">版本 {idx + 1}</span>
                 <span className="text-xs text-muted-foreground">
-                  {idx + 1 === renderData.length ? "AI生成" : "手动编辑"}
+                  {idx + 1 === renderData.length ? "AI 生成" : "手动编辑"}
                 </span>
               </div>
               <p className="text-xs text-muted-foreground mt-1">{new Date(version.timestamp).toLocaleString()}</p>
@@ -131,7 +132,7 @@ export function GenerationVersions({ generationId, onClose }: GenerationVersions
                 </div>
                 <div className="bg-muted rounded-md p-4 flex-grow overflow-hidden flex items-center justify-center">
                   <div
-                    dangerouslySetInnerHTML={{ __html: sanitizeSvg(selectedVersion.content) }}
+                    dangerouslySetInnerHTML={{ __html: onCleanSvgContent(sanitizeSvg(selectedVersion.content)) }}
                     className="w-full h-auto"
                   />
                 </div>

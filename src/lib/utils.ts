@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { toast } from "sonner";
+import { compress } from "squoosh-compress";
 import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
@@ -27,7 +28,7 @@ export function getNameInitial(name: string | null | undefined): string {
   return name.charAt(0).toUpperCase();
 }
 
-// 提取SVG内容的工具函数
+// 提取 SVG 内容的工具函数
 export function extractSvgContent(svgContent: string): string {
   if (!svgContent || typeof svgContent !== "string") return "";
 
@@ -56,22 +57,22 @@ export function extractSvgContent(svgContent: string): string {
 
 export function extractErrorMessage(errorString: string) {
   try {
-    // 使用正则表达式匹配JSON部分
+    // 使用正则表达式匹配 JSON 部分
     const jsonMatch = errorString.match(/\{.*\}/);
     if (jsonMatch) {
       const jsonStr = jsonMatch[0];
-      // 解析JSON
+      // 解析 JSON
       const errorObj = JSON.parse(jsonStr);
-      // 提取message字段
+      // 提取 message 字段
       return errorObj.error.message;
     }
     return "无法提取错误信息";
   } catch (e: AnyIfEmpty) {
-    return "解析错误: " + e.message;
+    return "解析错误：" + e.message;
   }
 }
 
-// 复制SVG内容
+// 复制 SVG 内容
 export const copyToClipboard = (svgContent: string) => {
   navigator.clipboard
     .writeText(svgContent)
@@ -80,3 +81,59 @@ export const copyToClipboard = (svgContent: string) => {
 };
 
 export const isDev = process.env.NODE_ENV === "development";
+
+export const compressImage: (originalImage: File) => Promise<{ file: File; size: string; base64: string }> = async (
+  originalImage
+) => {
+  if (!originalImage) {
+    alert("请先选择一张图片");
+    return {
+      file: null,
+      size: "",
+      base64: "",
+    };
+  }
+
+  try {
+    const compressedFile = await compress(
+      originalImage,
+      {
+        type: "browser-webp",
+        options: {
+          quality: 0.4,
+        },
+      },
+      originalImage.name
+    );
+    // 将 Blob 转换为 Base64
+    const base64 = await new Promise<string>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(compressedFile);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+    return {
+      base64,
+      file: compressedFile,
+      size: `${(compressedFile.size / 1024).toFixed(2)} KB`,
+    };
+  } catch (error) {
+    console.error("压缩过程中发生错误：", error);
+    toast.error("文件压缩失败，请重试");
+  }
+  return {
+    file: null,
+    size: "",
+    base64: "",
+  };
+};
+
+// 文件转为 base64
+export const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = (error) => reject(error);
+  });
+};

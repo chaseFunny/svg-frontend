@@ -5,11 +5,15 @@ import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { BuyCard } from "../buyCard";
+import { FileUploader, UploadedFile } from "../FileUploader";
+
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "../ui/tooltip";
 import { AspectRatioSelector } from "./components/AspectRatioSelector";
 import { StreamContent } from "./components/StreamContent";
 import { StyleSelector } from "./components/StyleSelector";
 import { SvgPromptInput } from "./components/SvgPromptInput";
 import { SvgResult } from "./components/SvgResult";
+import { UsageCounter } from "./components/UsageCounter";
 import { useSvgGenerator } from "./hooks/useSvgGenerator";
 
 const GenerateButton = dynamic(() => import("./components/GenerateButton").then((mod) => mod.GenerateButton), {
@@ -70,7 +74,11 @@ function SvgDialogContent({ className }: SvgDialogProps) {
   const [showSvgResult, setShowSvgResult] = useState(false);
   // 添加切换锁定状态，防止快速点击导致动画异常
   const [isTabSwitching, setIsTabSwitching] = useState(false);
-
+  // 上传文件 ref
+  const [file, setFile] = useState<{ image?: string; file?: string }>({ image: "", file: "" });
+  // 是否使用 pro 模型
+  const [isPro] = useState(false);
+  const usageCount = file.image || file.file || isPro ? 2 : 1;
   const disabled = !prompt || isGenerating;
 
   // 处理组件切换的动画效果
@@ -83,14 +91,14 @@ function SvgDialogContent({ className }: SvgDialogProps) {
     };
 
     if (isStreaming) {
-      // 流式生成过程中，始终显示StreamContent
+      // 流式生成过程中，始终显示 StreamContent
       clearTimeouts();
       setShowStreamContent(true);
       setShowSvgResult(false);
       setIsTabSwitching(false);
     } else if (streamComplete) {
       if (activeTab === "preview" && !isTabSwitching) {
-        // 流式生成完成且处于预览模式，显示SVG结果
+        // 流式生成完成且处于预览模式，显示 SVG 结果
         if (!isStreaming && !showSvgResult) {
           // 首次从流式内容切换到结果时使用动画
           clearTimeouts();
@@ -103,13 +111,13 @@ function SvgDialogContent({ className }: SvgDialogProps) {
           }, 200);
           timeouts.push(t1);
         } else if (!showSvgResult) {
-          // 确保预览模式下总是显示SVG结果
+          // 确保预览模式下总是显示 SVG 结果
           clearTimeouts();
           setShowStreamContent(false);
           setShowSvgResult(true);
         }
       } else if (activeTab === "code" && !isTabSwitching) {
-        // 代码视图：显示StreamContent，隐藏SvgResult
+        // 代码视图：显示 StreamContent，隐藏 SvgResult
         clearTimeouts();
         setShowStreamContent(true);
         setShowSvgResult(false);
@@ -130,11 +138,11 @@ function SvgDialogContent({ className }: SvgDialogProps) {
     // 设置切换锁定，防止快速切换
     setIsTabSwitching(true);
 
-    // 先更新activeTab，确保UI与状态一致
+    // 先更新 activeTab，确保 UI 与状态一致
     const newTab = activeTab === "preview" ? "code" : "preview";
     setActiveTab(newTab);
 
-    // 然后根据新的activeTab值应用过渡动画
+    // 然后根据新的 activeTab 值应用过渡动画
     if (newTab === "code") {
       // 切换到代码视图：先隐藏结果，再显示代码
       setShowSvgResult(false);
@@ -162,7 +170,7 @@ function SvgDialogContent({ className }: SvgDialogProps) {
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Enter" && !disabled) {
-        generateSvg();
+        generateSvg(file, isPro);
       }
     };
 
@@ -170,7 +178,7 @@ function SvgDialogContent({ className }: SvgDialogProps) {
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [disabled, generateSvg]);
+  }, [disabled, generateSvg, file, isPro]);
   /** 重置所有状态 */
   const resetAllState = () => {
     setActiveTab("preview");
@@ -178,6 +186,13 @@ function SvgDialogContent({ className }: SvgDialogProps) {
     setShowSvgResult(false);
     setIsTabSwitching(false);
   };
+
+  const handleFileUploaded = (file: UploadedFile) => {
+    console.log("文件已上传：", file);
+    // 文件上传后的处理逻辑，可以根据需要存储或使用文件数据
+    setFile((prev) => ({ ...prev, [file.fileType as "image" | "file"]: file.base64 }));
+  };
+
   return (
     <div className="flex flex-col gap-4">
       <div>
@@ -202,7 +217,7 @@ function SvgDialogContent({ className }: SvgDialogProps) {
               />
             </div>
 
-            {/* 最终SVG结果 - 添加过渡动画 */}
+            {/* 最终 SVG 结果 - 添加过渡动画 */}
             {generatedSvg && (
               <div
                 className={cn(
@@ -257,7 +272,7 @@ function SvgDialogContent({ className }: SvgDialogProps) {
 
           {/* 控制区域 - 选择器和生成按钮 */}
           <div className="flex flex-col mb-0 md:flex-row gap-3 items-start md:items-center justify-between">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full md:w-auto">
+            <div className="flex flex-col md:flex-row gap-3 w-full md:w-auto">
               <StyleSelector
                 value={selectedStyle}
                 options={styleOptions}
@@ -269,18 +284,32 @@ function SvgDialogContent({ className }: SvgDialogProps) {
                 onChange={setSelectedAspectRatio}
                 disabled={isGenerating}
               />
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger className="inline-block">
+                    <FileUploader onFileUploaded={handleFileUploaded} />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>上传图片或文件</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              {/* <ProModelToggle checked={isPro} onCheckedChange={setIsPro} disabled={isGenerating} /> */}
             </div>
             <div className="w-full md:w-auto">
-              <GenerateButton
-                onClick={() => {
-                  resetAllState();
-                  generateSvg();
-                }}
-                disabled={disabled}
-                isGenerating={isGenerating}
-                cancelGenerate={cancelGenerate}
-                className="w-full md:w-auto"
-              />
+              <div className="flex items-center gap-2">
+                {usageCount > 0 && <UsageCounter count={usageCount} />}
+                <GenerateButton
+                  onClick={() => {
+                    resetAllState();
+                    generateSvg(file, isPro);
+                  }}
+                  disabled={disabled}
+                  isGenerating={isGenerating}
+                  cancelGenerate={cancelGenerate}
+                  className="w-full md:w-auto flex-auto"
+                />
+              </div>
             </div>
           </div>
         </div>

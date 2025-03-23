@@ -40,7 +40,7 @@ export async function svgGeneratorControllerCreateGeneration(
   });
 }
 
-/** 更新SVG生成记录的公开状态（仅管理员） PUT /api/v1/svg-generator/generations/${param0}/public-status */
+/** 更新 SVG 生成记录的公开状态（仅管理员） PUT /api/v1/svg-generator/generations/${param0}/public-status */
 export async function svgGeneratorControllerUpdatePublicStatus(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.SvgGeneratorControllerUpdatePublicStatusParams,
@@ -79,7 +79,7 @@ export async function svgGeneratorControllerGetVersions(
   );
 }
 
-/** 查询公开的SVG生成内容，无需认证 GET /api/v1/svg-generator/generations/public */
+/** 查询公开的 SVG 生成内容，无需认证 GET /api/v1/svg-generator/generations/public */
 export async function svgGeneratorControllerFindPublicGenerations(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.SvgGeneratorControllerFindPublicGenerationsParams,
@@ -117,7 +117,7 @@ export async function svgGeneratorControllerCreateGenerationStream(
   });
 }
 
-/** 更新SVG版本内容 PUT /api/v1/svg-generator/generations/versions/${param0} */
+/** 更新 SVG 版本内容 PUT /api/v1/svg-generator/generations/versions/${param0} */
 export async function svgGeneratorControllerUpdateSvgVersion(
   // 叠加生成的Param类型 (非body参数swagger默认没有生成对象)
   params: API.SvgGeneratorControllerUpdateSvgVersionParams,

@@ -13,6 +13,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { GenerationVersions } from "./GenerationVersions";
+import { onCleanSvgContent } from "@/lib/formatSvg";
 
 export function RecentGenerations() {
   return (
@@ -45,13 +46,13 @@ function RecentGenerationsContent() {
   const [pageSize] = useState(12);
   const [totalPages, setTotalPages] = useState(0);
 
-  // 从URL获取当前页码
+  // 从 URL 获取当前页码
   const getCurrentPage = (): number => {
     const pageParam = searchParams.get("page");
     return pageParam ? parseInt(pageParam, 10) : 1;
   };
 
-  // 更新URL中的页码参数
+  // 更新 URL 中的页码参数
   const updatePageParam = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", newPage.toString());
@@ -76,7 +77,7 @@ function RecentGenerationsContent() {
       setGenerations(items);
       setTotalPages(totalPages);
     } catch (error) {
-      console.error("获取生成历史失败:", error);
+      console.error("获取生成历史失败：", error);
       toast.error("获取生成历史失败，请稍后重试");
     } finally {
       setLoading(false);
@@ -103,7 +104,7 @@ function RecentGenerationsContent() {
     setSelectedGenerationId(null);
   };
 
-  // 安全处理SVG内容
+  // 安全处理 SVG 内容
   const sanitizeSvg = (svgContent: string) => {
     return DOMPurify.sanitize(svgContent, {
       USE_PROFILES: { svg: true, svgFilters: true },
@@ -148,7 +149,7 @@ function RecentGenerationsContent() {
                 {generation.latestVersion && (
                   <div
                     dangerouslySetInnerHTML={{
-                      __html: sanitizeSvg(generation.latestVersion?.svgContent),
+                      __html: onCleanSvgContent(sanitizeSvg(generation.latestVersion?.svgContent)),
                     }}
                     className="w-full h-full flex items-center justify-center"
                   />

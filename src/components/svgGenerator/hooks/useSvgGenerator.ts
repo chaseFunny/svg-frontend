@@ -10,7 +10,7 @@ import { toast } from "sonner";
 
 export function useSvgGenerator(setOpenBuyCard: (open: boolean) => void, searchParams: ReadonlyURLSearchParams) {
   const { user } = useAuthStore();
-  // 从URL获取选中的风格和比例
+  // 从 URL 获取选中的风格和比例
   const router = useRouter();
   const urlStyle = searchParams.get("style") || STYLE_OPTIONS[0];
   const urlAspectRatio = searchParams.get("aspectRatio") || DEFAULT_ASPECT_RATIO.ratio;
@@ -23,7 +23,7 @@ export function useSvgGenerator(setOpenBuyCard: (open: boolean) => void, searchP
     if (localStorage.getItem("svg-prompt")) {
       setPrompt(localStorage.getItem("svg-prompt") || "");
     }
-  }, []);
+  }, [setPrompt]);
   // 生成 id
   const [generateId, setGenerateId] = useState<string>("");
 
@@ -36,10 +36,10 @@ export function useSvgGenerator(setOpenBuyCard: (open: boolean) => void, searchP
   const [streamContent, setStreamContent] = useState<string>("");
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamComplete, setStreamComplete] = useState(false);
-  // 添加AbortController引用以支持取消请求
+  // 添加 AbortController 引用以支持取消请求
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // 更新风格选择并存储到URL
+  // 更新风格选择并存储到 URL
   const setSelectedStyle = useCallback(
     (style: string) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -49,7 +49,7 @@ export function useSvgGenerator(setOpenBuyCard: (open: boolean) => void, searchP
     [router, searchParams]
   );
 
-  // 更新尺寸比例并存储到URL
+  // 更新尺寸比例并存储到 URL
   const setSelectedAspectRatio = useCallback(
     (aspectRatio: string) => {
       const params = new URLSearchParams(searchParams.toString());
@@ -70,153 +70,161 @@ export function useSvgGenerator(setOpenBuyCard: (open: boolean) => void, searchP
     abortControllerRef.current = null;
   }, []);
 
-  // 流式生成SVG
-  const generateSvg = useCallback(async () => {
-    // 先恢复所有状态
-    resetAllState();
-    if (!prompt) {
-      toast.error("请输入描述内容");
-      return;
-    }
-
-    setIsGenerating(true);
-    setIsStreaming(true);
-    setStreamContent("");
-    setStreamComplete(false);
-    setGeneratedSvg(null);
-    isGeneratingErrorRef.current = false;
-    // 创建新的AbortController实例
-    abortControllerRef.current = new AbortController();
-    const signal = abortControllerRef.current.signal;
-    if (!user?.id) {
-      toast.error("请先登录");
-      return router.push("/login");
-    }
-    try {
-      const token = JSON.parse(localStorage.getItem("auth-storage") || "{}")?.state?.token;
-      const response = await fetch("/api/v1/svg-generator/generations/stream?userId=" + user?.id, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token || ""}`,
-          "Cache-Control": "no-cache",
-          "X-Requested-With": "XMLHttpRequest",
-        },
-        body: JSON.stringify({
-          inputContent: prompt,
-          style: urlStyle,
-          aspectRatio: urlAspectRatio,
-        }),
-        // 确保使用正确的流式处理模式
-        cache: "no-store",
-        signal, // 添加信号用于中断请求
-      });
-
-      if (!response.ok) {
-        throw new Error(`请求失败: ${response.status}`);
+  // 流式生成 SVG
+  const generateSvg = useCallback(
+    async (file?: { image?: string; file?: string }, isPro?: boolean) => {
+      // 先恢复所有状态
+      resetAllState();
+      if (!prompt) {
+        toast.error("请输入描述内容");
+        return;
       }
 
-      if (!response.body) {
-        throw new Error("响应体为空");
+      setIsGenerating(true);
+      setIsStreaming(true);
+      setStreamContent("");
+      setStreamComplete(false);
+      setGeneratedSvg(null);
+      isGeneratingErrorRef.current = false;
+      // 创建新的 AbortController 实例
+      abortControllerRef.current = new AbortController();
+      const signal = abortControllerRef.current.signal;
+      if (!user?.id) {
+        toast.error("请先登录");
+        return router.push("/login");
       }
+      try {
+        const token = JSON.parse(localStorage.getItem("auth-storage") || "{}")?.state?.token;
+        const imageData = file?.image ? { image: file.image } : {};
+        const fileData = file?.file ? { file: file.file } : {};
+        const response = await fetch("/api/v1/svg-generator/generations/stream?userId=" + user?.id, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token || ""}`,
+            "Cache-Control": "no-cache",
+            "X-Requested-With": "XMLHttpRequest",
+          },
+          body: JSON.stringify({
+            inputContent: prompt,
+            style: urlStyle,
+            aspectRatio: urlAspectRatio,
+            isThinking: isPro ? "thinking" : "base",
+            ...imageData,
+            ...fileData,
+          }),
+          // 确保使用正确的流式处理模式
+          cache: "no-store",
+          signal, // 添加信号用于中断请求
+        });
 
-      // 处理流式响应
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
-      let receivedData = "";
-      let buffer = "";
+        if (!response.ok) {
+          throw new Error(`请求失败：${response.status}`);
+        }
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+        if (!response.body) {
+          throw new Error("响应体为空");
+        }
 
-        const chunk = decoder.decode(value, { stream: true });
-        buffer += chunk;
-        // 按行处理SSE数据
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || ""; // 保留最后一个不完整的行
+        // 处理流式响应
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let receivedData = "";
+        let buffer = "";
 
-        for (const line of lines) {
-          if (line.trim() === "") continue;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
 
-          if (line.startsWith("data: ")) {
-            const jsonStr = line.substring(6); // 去掉"data: "前缀
-            // console.log(jsonStr, "jsonStr");
+          const chunk = decoder.decode(value, { stream: true });
+          buffer += chunk;
+          // 按行处理 SSE 数据
+          const lines = buffer.split("\n");
+          buffer = lines.pop() || ""; // 保留最后一个不完整的行
 
-            if (jsonStr === "[DONE]") {
-              continue; // 忽略结束标记，我们使用done来检测
-            }
+          for (const line of lines) {
+            if (line.trim() === "") continue;
 
-            try {
-              const eventData: {
-                chunk: string;
-                message: string;
-                status: "started" | "streaming" | "completed" | "error";
-                id: number;
-              } = JSON.parse(jsonStr);
+            if (line.startsWith("data: ")) {
+              const jsonStr = line.substring(6); // 去掉"data: "前缀
+              // console.log(jsonStr, "jsonStr");
 
-              if (eventData.status === "error") {
-                isGeneratingErrorRef.current = true;
-                setStreamContent("");
-                if (eventData.message.includes("户没有剩余积分")) {
-                  setOpenBuyCard(true);
-                }
-                return toast.error(eventData.id === 17 ? extractErrorMessage(eventData.message) : eventData.message);
-              } else if (eventData.chunk && eventData.status === "streaming") {
-                receivedData += eventData.chunk;
-                setStreamContent(receivedData);
-              } else if (eventData.status === "completed") {
-                // 流结束
-                setStreamComplete(true);
-                localStorage.removeItem("svg-prompt");
-              } else if (eventData.status === "started") {
-                // 流开始
-                setStreamContent(eventData.message);
-                setGenerateId(eventData.id?.toString());
+              if (jsonStr === "[DONE]") {
+                continue; // 忽略结束标记，我们使用 done 来检测
               }
-            } catch (error) {
-              console.error("解析事件数据失败:", error, jsonStr);
-              setStreamContent("");
-              if (!isGeneratingErrorRef.current) {
-                isGeneratingErrorRef.current = true;
-                toast.error("解析响应数据失败");
+
+              try {
+                const eventData: {
+                  chunk: string;
+                  message: string;
+                  status: "started" | "streaming" | "completed" | "error";
+                  id: number;
+                } = JSON.parse(jsonStr);
+
+                if (eventData.status === "error") {
+                  isGeneratingErrorRef.current = true;
+                  setStreamContent("");
+                  if (eventData.message.includes("户没有剩余积分")) {
+                    setOpenBuyCard(true);
+                  }
+                  return toast.error(eventData.id === 17 ? extractErrorMessage(eventData.message) : eventData.message);
+                } else if (eventData.chunk && eventData.status === "streaming") {
+                  receivedData += eventData.chunk;
+                  setStreamContent(receivedData);
+                } else if (eventData.status === "completed") {
+                  // 流结束
+                  setStreamComplete(true);
+                  localStorage.removeItem("svg-prompt");
+                } else if (eventData.status === "started") {
+                  // 流开始
+                  setStreamContent(eventData.message);
+                  setGenerateId(eventData.id?.toString());
+                }
+              } catch (error) {
+                console.error("解析事件数据失败：", error, jsonStr);
+                setStreamContent("");
+                if (!isGeneratingErrorRef.current) {
+                  isGeneratingErrorRef.current = true;
+                  toast.error("解析响应数据失败");
+                }
               }
             }
           }
         }
-      }
 
-      // 流结束，从完整响应中提取SVG内容
-      setStreamComplete(true);
+        // 流结束，从完整响应中提取 SVG 内容
+        setStreamComplete(true);
 
-      // 提取SVG内容
-      const svgContent = extractSvgContent(receivedData);
-      if (svgContent) {
-        setGeneratedSvg(svgContent);
-        if (!isGeneratingErrorRef.current) {
-          toast.success("SVG生成成功");
-        }
-      } else {
-        // 如果无法提取有效的SVG内容，尝试直接从原始字符串中查找SVG标签
-        const svgMatch = receivedData.match(/<svg[\s\S]*?<\/svg>/i);
-        if (svgMatch) {
-          setGeneratedSvg(svgMatch[0]);
+        // 提取 SVG 内容
+        const svgContent = extractSvgContent(receivedData);
+        if (svgContent) {
+          setGeneratedSvg(svgContent);
           if (!isGeneratingErrorRef.current) {
-            toast.success("SVG生成成功");
+            toast.success("SVG 生成成功");
           }
         } else {
-          toast.error("无法提取有效的SVG内容");
+          // 如果无法提取有效的 SVG 内容，尝试直接从原始字符串中查找 SVG 标签
+          const svgMatch = receivedData.match(/<svg[\s\S]*?<\/svg>/i);
+          if (svgMatch) {
+            setGeneratedSvg(svgMatch[0]);
+            if (!isGeneratingErrorRef.current) {
+              toast.success("SVG 生成成功");
+            }
+          } else {
+            toast.error("无法提取有效的 SVG 内容");
+          }
         }
+      } catch (error) {
+        console.error("生成 SVG 时出错：", error);
+        toast.error("生成 SVG 失败，请稍后重试");
+        setStreamContent("");
+      } finally {
+        setIsGenerating(false);
+        setIsStreaming(false);
       }
-    } catch (error) {
-      console.error("生成SVG时出错:", error);
-      toast.error("生成SVG失败，请稍后重试");
-      setStreamContent("");
-    } finally {
-      setIsGenerating(false);
-      setIsStreaming(false);
-    }
-  }, [prompt, urlStyle, urlAspectRatio, user?.id]);
+    },
+    [prompt, urlStyle, urlAspectRatio, user?.id]
+  );
   /** 取消生成 */
   const cancelGenerate = useCallback(() => {
     // 取消请求
@@ -233,7 +241,7 @@ export function useSvgGenerator(setOpenBuyCard: (open: boolean) => void, searchP
     toast.info("已取消生成");
   }, []);
 
-  // 下载SVG
+  // 下载 SVG
   const downloadSvg = useCallback(() => {
     if (!generatedSvg) return;
 
@@ -246,7 +254,7 @@ export function useSvgGenerator(setOpenBuyCard: (open: boolean) => void, searchP
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    toast.success("SVG下载成功");
+    toast.success("SVG 下载成功");
   }, [generatedSvg]);
 
   useEffect(() => {
