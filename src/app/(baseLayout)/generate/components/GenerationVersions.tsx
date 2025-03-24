@@ -4,6 +4,7 @@ import { DownloadButton } from "@/components/download-button";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { onCleanSvgContent } from "@/lib/formatSvg";
+import { extractSvgContent } from "@/lib/utils";
 import { svgGeneratorControllerGetVersions } from "@/services/svg/svgGenerations";
 import DOMPurify from "dompurify";
 import { ArrowLeftIcon, PencilIcon } from "lucide-react";
@@ -121,7 +122,7 @@ export function GenerationVersions({ generationId, onClose }: GenerationVersions
                 <div className="flex justify-between items-center mb-2">
                   <h4 className="font-medium">版本 {selectedVersion.versionNumber} 预览</h4>
                   <div className="flex items-center gap-2">
-                    <DownloadButton svgContent={selectedVersion.content} />
+                    <DownloadButton svgContent={extractSvgContent(selectedVersion.content)} />
                     <Link href={`/editor/${generationId}?version=${selectedVersion.versionNumber - 1}`}>
                       <Button variant="ghost" size="sm" className="text-gray-500">
                         编辑

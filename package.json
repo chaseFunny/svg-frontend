@@ -5,8 +5,9 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
+    "clean-build": "rm -rf .next && next build",
     "start": "next start --port 3002",
-    "server": "npm run build && npm run start",
+    "server": "npm run clean-build && npm run start",
     "lint": "next lint",
     "openapi": "ts-node ./scripts/openapi.config.ts"
   },

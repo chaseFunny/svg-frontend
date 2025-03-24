@@ -3,6 +3,7 @@ import { typeActiveTab } from "..";
 import { GoEditButton } from "./GoEditButton";
 import { SvgViewer } from "./SvgViewer";
 import SwitchViewTab from "./SwitchViewTab";
+import { extractSvgContent } from "@/lib/utils";
 
 interface SvgResultProps {
   svgContent: string;
@@ -19,7 +20,7 @@ export function SvgResult({ svgContent, toggleTab, activeTab, generateId }: SvgR
         <SwitchViewTab toggleTab={toggleTab} activeTab={activeTab} />
         <div className="flex gap-2">
           <GoEditButton generateId={generateId} />
-          <DownloadButton svgContent={svgContent} />
+          <DownloadButton svgContent={extractSvgContent(svgContent)} />
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
-import { cn, compressImage, fileToBase64 } from "@/lib/utils";
+import { compressImage } from "@/lib/compressImage";
+import { cn, fileToBase64 } from "@/lib/utils";
 import { FileIcon, ImageIcon, XCircleIcon } from "lucide-react";
 import Upload from "rc-upload";
 import { useState } from "react";

@@ -4,6 +4,8 @@ import { DownloadButton } from "@/components/download-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { onCleanSvgContent } from "@/lib/formatSvg";
+import { extractSvgContent } from "@/lib/utils";
 import { svgGeneratorControllerFindGenerations } from "@/services/svg/svgGenerations";
 import { useAuthStore } from "@/store/useAuthStore";
 import DOMPurify from "dompurify";
@@ -13,7 +15,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { GenerationVersions } from "./GenerationVersions";
-import { onCleanSvgContent } from "@/lib/formatSvg";
 
 export function RecentGenerations() {
   return (
@@ -172,7 +173,7 @@ function RecentGenerationsContent() {
                   </span> */}
                 </div>
                 <div className="flex items-center">
-                  <DownloadButton svgContent={generation.latestVersion?.svgContent || ""} />
+                  <DownloadButton svgContent={extractSvgContent(generation.latestVersion?.svgContent || "")} />
                   <Link href={`/editor/${generation.id}`} onClick={(e) => e.stopPropagation()}>
                     <Button variant="ghost" size="sm" className="text-gray-400">
                       <PencilIcon className="w-4 h-4" />

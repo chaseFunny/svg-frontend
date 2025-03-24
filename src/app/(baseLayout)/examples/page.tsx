@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CollapsibleContent } from "@/components/ui/collapsible-content";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
-import { copyToClipboard } from "@/lib/utils";
+import { copyToClipboard, extractSvgContent } from "@/lib/utils";
 import { svgGeneratorControllerFindPublicGenerations } from "@/services/svg/svgGenerations";
 import DOMPurify from "dompurify";
 import { ArrowRight, Copy, ExternalLink, Info } from "lucide-react";
@@ -250,7 +250,7 @@ function ExamplesPageContent() {
             </Button>
           </div>
           <div className="flex gap-2">
-            <DownloadButton svgContent={selectedSvg.latestVersion?.svgContent} />
+            <DownloadButton svgContent={extractSvgContent(selectedSvg.latestVersion?.svgContent)} />
             <Button variant="outline" onClick={() => copySvgCode(selectedSvg)} className=" justify-start">
               <Copy className=" h-4 w-4" />
             </Button>
@@ -313,7 +313,7 @@ function ExamplesPageContent() {
             </div>
             <div className="hidden group-hover:flex absolute top-2 right-2 justify-between items-center bg-background/80 rounded-md p-1 backdrop-blur-sm">
               <div className="flex gap-1">
-                <DownloadButton svgContent={item.latestVersion?.svgContent} />
+                <DownloadButton svgContent={extractSvgContent(item.latestVersion?.svgContent)} />
                 <Button
                   variant="ghost"
                   size="icon"
