@@ -1,15 +1,16 @@
 import { Button } from "@/components/ui/button";
+import { onCleanSvgContent } from "@/lib/formatSvg";
 import { copyToClipboard } from "@/lib/utils";
-import DOMPurify from "dompurify"; // 引入DOMPurify防止XSS攻击
+import DOMPurify from "dompurify"; // 引入 DOMPurify 防止 XSS 攻击
 import hljs from "highlight.js";
-import xml from "highlight.js/lib/languages/xml"; // 引入XML语言支持
-import "highlight.js/styles/vs2015.css"; // 使用vs2015主题
+import xml from "highlight.js/lib/languages/xml"; // 引入 XML 语言支持
+import "highlight.js/styles/vs2015.css"; // 使用 vs2015 主题
 import { Copy } from "lucide-react";
 import { useEffect, useRef } from "react";
 import { GoEditButton } from "./GoEditButton";
 import SwitchViewTab from "./SwitchViewTab";
 
-// 注册XML语言
+// 注册 XML 语言
 hljs.registerLanguage("xml", xml);
 
 interface StreamContentProps {
@@ -46,11 +47,11 @@ export function StreamContent({ content, isComplete, toggleTab, activeTab, gener
     if (codeRef.current && content) {
       try {
         const highlightedCode = hljs.highlight(content, {
-          language: "xml", // SVG基于XML，使用xml语法高亮
+          language: "xml", // SVG 基于 XML，使用 xml 语法高亮
           ignoreIllegals: true,
         }).value;
 
-        // 使用DOMPurify净化高亮后的HTML
+        // 使用 DOMPurify 净化高亮后的 HTML
         codeRef.current.innerHTML = DOMPurify.sanitize(highlightedCode);
       } catch (error) {
         // 如果高亮失败，至少确保内容显示
@@ -72,7 +73,7 @@ export function StreamContent({ content, isComplete, toggleTab, activeTab, gener
             <div className="flex gap-2">
               <GoEditButton generateId={generateId} />
               {/* 添加复制按钮 */}
-              <Button variant="outline" size="sm" onClick={() => copyToClipboard(content)}>
+              <Button variant="outline" size="sm" onClick={() => copyToClipboard(onCleanSvgContent(content))}>
                 <Copy className="h-4 w-4" />
               </Button>
             </div>

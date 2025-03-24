@@ -4,7 +4,6 @@ import { DownloadButton } from "@/components/download-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { onCleanSvgContent } from "@/lib/formatSvg";
 import { extractSvgContent } from "@/lib/utils";
 import { svgGeneratorControllerFindGenerations } from "@/services/svg/svgGenerations";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -150,7 +149,7 @@ function RecentGenerationsContent() {
                 {generation.latestVersion && (
                   <div
                     dangerouslySetInnerHTML={{
-                      __html: onCleanSvgContent(sanitizeSvg(generation.latestVersion?.svgContent)),
+                      __html: extractSvgContent(sanitizeSvg(generation.latestVersion?.svgContent)),
                     }}
                     className="w-full h-full flex items-center justify-center"
                   />

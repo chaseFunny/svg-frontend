@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "@/lib/utils";
+import { cn, extractSvgContent } from "@/lib/utils";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -229,7 +229,7 @@ function SvgDialogContent({ className }: SvgDialogProps) {
               >
                 <SvgResult
                   generateId={generateId}
-                  svgContent={generatedSvg}
+                  svgContent={extractSvgContent(generatedSvg)}
                   toggleTab={handleToggleTab}
                   activeTab={activeTab}
                 />
@@ -241,7 +241,7 @@ function SvgDialogContent({ className }: SvgDialogProps) {
               {activeTab === "preview" && generatedSvg && !isStreaming ? (
                 <SvgResult
                   generateId={generateId}
-                  svgContent={generatedSvg}
+                  svgContent={extractSvgContent(generatedSvg)}
                   toggleTab={handleToggleTab}
                   activeTab={activeTab}
                 />

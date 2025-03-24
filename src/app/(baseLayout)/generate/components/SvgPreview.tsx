@@ -1,5 +1,7 @@
 "use client";
 
+import { onCleanSvgContent } from "@/lib/formatSvg";
+import { extractSvgContent } from "@/lib/utils";
 import { svgGeneratorControllerGetVersions } from "@/services/svg/svgGenerations";
 import DOMPurify from "dompurify";
 import { useEffect, useState } from "react";
@@ -25,10 +27,10 @@ export function SvgPreview({ generationId }: SvgPreviewProps) {
         if (versions && versions.length > 0) {
           // 按版本号排序
           const latestVersion = versions.sort((a, b) => b.versionNumber - a.versionNumber)[0];
-          setSvgContent(latestVersion?.svgContent);
+          setSvgContent(extractSvgContent(latestVersion?.svgContent));
         }
       } catch (error) {
-        console.error("获取SVG预览失败:", error);
+        console.error("获取 SVG 预览失败：", error);
       } finally {
         setLoading(false);
       }
@@ -37,7 +39,7 @@ export function SvgPreview({ generationId }: SvgPreviewProps) {
     fetchLatestVersion();
   }, [generationId]);
 
-  // 安全处理SVG内容
+  // 安全处理 SVG 内容
   const sanitizeSvg = (svgContent: string) => {
     return DOMPurify.sanitize(svgContent, {
       USE_PROFILES: { svg: true, svgFilters: true },
@@ -70,7 +72,7 @@ export function SvgPreview({ generationId }: SvgPreviewProps) {
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M6 18L18 6M6 6l12 12" />
           </svg>
           <p className="text-sm text-muted-foreground">预览不可用</p>
-          <p className="text-xs text-muted-foreground/70">无法加载SVG内容</p>
+          <p className="text-xs text-muted-foreground/70">无法加载 SVG 内容</p>
         </div>
       </div>
     );
@@ -78,7 +80,10 @@ export function SvgPreview({ generationId }: SvgPreviewProps) {
 
   return (
     <div className="w-full h-full min-h-[120px] bg-muted rounded-md flex items-center justify-center overflow-hidden">
-      <div dangerouslySetInnerHTML={{ __html: sanitizeSvg(svgContent) }} className="w-full h-auto p-2" />
+      <div
+        dangerouslySetInnerHTML={{ __html: sanitizeSvg(onCleanSvgContent(svgContent)) }}
+        className="w-full h-auto p-2"
+      />
     </div>
   );
 }

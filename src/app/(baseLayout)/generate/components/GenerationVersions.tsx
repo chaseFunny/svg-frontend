@@ -3,7 +3,6 @@
 import { DownloadButton } from "@/components/download-button";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { onCleanSvgContent } from "@/lib/formatSvg";
 import { extractSvgContent } from "@/lib/utils";
 import { svgGeneratorControllerGetVersions } from "@/services/svg/svgGenerations";
 import DOMPurify from "dompurify";
@@ -32,7 +31,7 @@ export function GenerationVersions({ generationId, onClose }: GenerationVersions
       setData(data?.[0]);
       if (data.length > 0) {
         const defaultData = {
-          content: data[0].svgContent,
+          content: extractSvgContent(data[0].svgContent),
           timestamp: data[0].createdAt,
           versionNumber: 1,
         };
@@ -133,7 +132,7 @@ export function GenerationVersions({ generationId, onClose }: GenerationVersions
                 </div>
                 <div className="bg-muted rounded-md p-4 flex-grow overflow-hidden flex items-center justify-center">
                   <div
-                    dangerouslySetInnerHTML={{ __html: onCleanSvgContent(sanitizeSvg(selectedVersion.content)) }}
+                    dangerouslySetInnerHTML={{ __html: extractSvgContent(sanitizeSvg(selectedVersion.content)) }}
                     className="w-full h-auto"
                   />
                 </div>

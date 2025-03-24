@@ -1,6 +1,7 @@
 "use client";
 
 import { useLeavePageConfirm } from "@/hooks/useLeavePageConfirm";
+import { extractSvgContent } from "@/lib/utils";
 import { useParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -40,8 +41,8 @@ function EditPageContent() {
   const version = Number(searchParams.get("version") ?? 0);
   useLeavePageConfirm();
 
-  // 模拟用户ID，实际应用中应从用户会话或认证系统获取
-  const userId = 1; // 假设当前用户ID为1
+  // 模拟用户 ID，实际应用中应从用户会话或认证系统获取
+  const userId = 1; // 假设当前用户 ID 为 1
 
   // 获取 SVG 版本数据
   const fetchSvgVersions = async () => {
@@ -53,7 +54,7 @@ function EditPageContent() {
           ? (versions[0].svgModifyList as unknown as typeVersionData[])
           : [
               {
-                content: versions[0].svgContent,
+                content: extractSvgContent(versions[0].svgContent),
                 timestamp: versions[0].createdAt,
                 versionNumber: versions[0].versionNumber,
               },
@@ -61,7 +62,7 @@ function EditPageContent() {
       );
       versionIdRef.current = versions[0].id;
     } catch (error) {
-      console.error("获取SVG版本失败:", error);
+      console.error("获取 SVG 版本失败：", error);
     } finally {
       setLoading(false);
     }
@@ -121,7 +122,7 @@ function EditPageContent() {
             router.replace(pathname, { scroll: false });
             toast.success("保存成功");
           } catch (error: AnyIfEmpty) {
-            console.error("保存SVG内容失败:", error);
+            console.error("保存 SVG 内容失败：", error);
             toast.error("保存失败" + error.message);
           }
         }

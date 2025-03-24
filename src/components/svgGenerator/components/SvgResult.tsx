@@ -1,9 +1,9 @@
 import { DownloadButton } from "@/components/download-button";
+import { extractSvgContent } from "@/lib/utils";
 import { typeActiveTab } from "..";
 import { GoEditButton } from "./GoEditButton";
 import { SvgViewer } from "./SvgViewer";
 import SwitchViewTab from "./SwitchViewTab";
-import { extractSvgContent } from "@/lib/utils";
 
 interface SvgResultProps {
   svgContent: string;
@@ -25,7 +25,7 @@ export function SvgResult({ svgContent, toggleTab, activeTab, generateId }: SvgR
       </div>
 
       {/* 使用新的 SvgViewer 组件 */}
-      <SvgViewer svgContent={svgContent} className="w-full h-3/4" />
+      <SvgViewer svgContent={extractSvgContent(svgContent)} className="w-full h-3/4" />
     </div>
   );
 }

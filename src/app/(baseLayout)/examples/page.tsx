@@ -49,29 +49,29 @@ function ExamplesPageContent() {
   const [pageSize] = useState(12);
   const [totalPages, setTotalPages] = useState(0);
 
-  // 从URL获取当前页码
+  // 从 URL 获取当前页码
   const getCurrentPage = (): number => {
     const pageParam = searchParams.get("page");
     return pageParam ? parseInt(pageParam, 10) : 1;
   };
 
-  // 获取当前查看的SVG ID
+  // 获取当前查看的 SVG ID
   const getCurrentSvgId = (): string | null => {
     return searchParams.get("id");
   };
 
-  // 更新URL中的页码参数
+  // 更新 URL 中的页码参数
   const updatePageParam = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", newPage.toString());
-    // 如果有id参数，需要清除
+    // 如果有 id 参数，需要清除
     if (params.has("id")) {
       params.delete("id");
     }
     router.push(`?${params.toString()}`, { scroll: false });
   };
 
-  // 更新URL中的SVG ID参数
+  // 更新 URL 中的 SVG ID 参数
   const updateSvgIdParam = (svgId: string) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("id", svgId);
@@ -93,19 +93,19 @@ function ExamplesPageContent() {
       setGenerations(items);
       setTotalPages(totalPages);
     } catch (error) {
-      console.error("获取展示示例失败:", error);
+      console.error("获取展示示例失败：", error);
       toast.error("获取展示示例失败，请稍后重试");
     } finally {
       setLoading(false);
     }
   };
 
-  // 根据ID获取SVG详情
+  // 根据 ID 获取 SVG 详情
   const fetchSvgById = async (id: string) => {
     try {
       setDetailLoading(true);
 
-      // 修复：遍历所有页面查找SVG，而不仅仅是当前页
+      // 修复：遍历所有页面查找 SVG，而不仅仅是当前页
       let svg = null;
       let currentSearchPage = 1;
       const maxSearchPages = 10; // 设置最大搜索页数限制，避免无限循环
@@ -118,7 +118,7 @@ function ExamplesPageContent() {
 
         svg = response.items.find((item) => item.id.toString() === id);
 
-        // 如果找到了SVG或已经搜索完所有页面，则退出循环
+        // 如果找到了 SVG 或已经搜索完所有页面，则退出循环
         if (svg || currentSearchPage >= response.totalPages) {
           break;
         }
@@ -130,13 +130,13 @@ function ExamplesPageContent() {
         setSelectedSvg(svg);
         window.scrollTo({ top: 0, behavior: "smooth" });
       } else {
-        toast.error("未找到相应的SVG");
+        toast.error("未找到相应的 SVG");
         backToList();
       }
     } catch (error) {
-      console.error("获取SVG详情失败:", error);
-      toast.error("获取SVG详情失败，请稍后重试");
-      // 获取失败时，清除URL中的id参数，返回列表视图
+      console.error("获取 SVG 详情失败：", error);
+      toast.error("获取 SVG 详情失败，请稍后重试");
+      // 获取失败时，清除 URL 中的 id 参数，返回列表视图
       backToList();
     } finally {
       setDetailLoading(false);
@@ -146,7 +146,7 @@ function ExamplesPageContent() {
   useEffect(() => {
     const svgId = getCurrentSvgId();
     if (svgId) {
-      // 先检查生成列表中是否已经有该SVG
+      // 先检查生成列表中是否已经有该 SVG
       const existingSvg = generations.find((item) => item.id.toString() === svgId);
       if (existingSvg) {
         setSelectedSvg(existingSvg);
@@ -175,12 +175,12 @@ function ExamplesPageContent() {
     }
   };
 
-  // 查看SVG详情
+  // 查看 SVG 详情
   const viewSvgDetails = (svg: API.SvgGenerationWithVersionData) => {
     updateSvgIdParam(svg.id.toString());
   };
 
-  // 复制SVG代码
+  // 复制 SVG 代码
   const copySvgCode = (svg: API.SvgGenerationWithVersionData, e?: React.MouseEvent) => {
     if (e) {
       e.preventDefault();
@@ -188,10 +188,10 @@ function ExamplesPageContent() {
     }
 
     const svgContent = svg.latestVersion?.svgContent;
-    copyToClipboard(svgContent);
+    copyToClipboard(extractSvgContent(svgContent));
   };
 
-  // 安全处理SVG内容
+  // 安全处理 SVG 内容
   const sanitizeSvg = (svgContent: string) => {
     return DOMPurify.sanitize(svgContent, {
       USE_PROFILES: { svg: true, svgFilters: true },
@@ -228,7 +228,7 @@ function ExamplesPageContent() {
         <div className="flex flex-col justify-center items-center h-60 bg-muted/30 rounded-lg border border-dashed border-muted-foreground/30">
           <Info className="w-12 h-12 text-muted-foreground/50 mb-4" />
           <p className="text-lg text-muted-foreground mb-2">暂无示例数据</p>
-          <p className="text-sm text-muted-foreground/70 mb-6">目前还没有公开的SVG生成示例</p>
+          <p className="text-sm text-muted-foreground/70 mb-6">目前还没有公开的 SVG 生成示例</p>
           <Button asChild>
             <Link href="/">
               尝试生成 <ArrowRight className="ml-1 w-4 h-4" />
@@ -307,7 +307,7 @@ function ExamplesPageContent() {
           >
             <div className="p-2 aspect-square flex justify-center items-center bg-muted/30">
               <div
-                dangerouslySetInnerHTML={{ __html: sanitizeSvg(item.latestVersion?.svgContent) }}
+                dangerouslySetInnerHTML={{ __html: sanitizeSvg(extractSvgContent(item.latestVersion?.svgContent)) }}
                 className="w-full max-h-[600px] p-4"
               />
             </div>
@@ -319,7 +319,7 @@ function ExamplesPageContent() {
                   size="icon"
                   className="w-8 h-8"
                   onClick={(e) => copySvgCode(item, e)}
-                  title="复制SVG代码"
+                  title="复制 SVG 代码"
                 >
                   <Copy className="w-4 h-4" />
                 </Button>
