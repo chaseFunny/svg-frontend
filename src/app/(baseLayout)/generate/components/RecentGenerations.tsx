@@ -4,11 +4,11 @@ import { DownloadButton } from "@/components/download-button";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { extractSvgContent } from "@/lib/utils";
+import { copyToClipboard, extractSvgContent } from "@/lib/utils";
 import { svgGeneratorControllerFindGenerations } from "@/services/svg/svgGenerations";
 import { useAuthStore } from "@/store/useAuthStore";
 import DOMPurify from "dompurify";
-import { EyeIcon, PencilIcon } from "lucide-react";
+import { CopyIcon, EyeIcon, PencilIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -40,7 +40,7 @@ function RecentGenerationsContent() {
   const searchParams = useSearchParams();
   const [generations, setGenerations] = useState<API.SvgGenerationWithVersionData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedGenerationId, setSelectedGenerationId] = useState<number | null>(null);
+  const [selectedGeneration, setSelectedGeneration] = useState<API.SvgGenerationWithVersionData | null>(null);
 
   // 分页相关状态
   const [pageSize] = useState(12);
@@ -95,13 +95,13 @@ function RecentGenerationsContent() {
   };
 
   // 查看详情
-  const viewDetails = (svgId: number) => {
-    setSelectedGenerationId(svgId);
+  const viewDetails = (svg: API.SvgGenerationWithVersionData) => {
+    setSelectedGeneration(svg);
   };
 
   // 关闭版本查看
   const closeVersionView = () => {
-    setSelectedGenerationId(null);
+    setSelectedGeneration(null);
   };
 
   // 安全处理 SVG 内容
@@ -129,8 +129,8 @@ function RecentGenerationsContent() {
   }
 
   // 如果选择了特定生成，显示其版本历史
-  if (selectedGenerationId !== null) {
-    return <GenerationVersions generationId={selectedGenerationId} onClose={closeVersionView} />;
+  if (selectedGeneration !== null) {
+    return <GenerationVersions generation={selectedGeneration} onClose={closeVersionView} />;
   }
 
   const currentPage = getCurrentPage();
@@ -142,7 +142,7 @@ function RecentGenerationsContent() {
           <Card
             key={generation.id}
             className="flex flex-col overflow-hidden py-0 gap-0"
-            onClick={() => viewDetails(generation.id)}
+            onClick={() => viewDetails(generation)}
           >
             <CardContent className="p-2 flex-grow">
               <div className="mb-4 h-90 flex items-center justify-center overflow-hidden bg-secondary/30 rounded-md">
@@ -155,7 +155,6 @@ function RecentGenerationsContent() {
                   />
                 )}
               </div>
-              {/* <h3 className="font-medium mb-1 truncate">{generation.title || `生成 #${generation.id}`}</h3> */}
               <p className="text-sm text-muted-foreground line-clamp-2 mb-2">提示词：{generation.inputContent}</p>
               <div className="flex justify-between items-center gap-2 flex-wrap w-full">
                 <div className="flex items-center gap-2">
@@ -167,9 +166,6 @@ function RecentGenerationsContent() {
                       {generation.configuration?.aspectRatio}
                     </span>
                   )}
-                  {/* <span className="text-xs text-muted-foreground">
-                    {new Date(generation.createdAt).toLocaleString()}
-                  </span> */}
                 </div>
                 <div className="flex items-center">
                   <DownloadButton svgContent={extractSvgContent(generation.latestVersion?.svgContent || "")} />
@@ -184,10 +180,22 @@ function RecentGenerationsContent() {
                     size="sm"
                     onClick={(e) => {
                       e.stopPropagation();
-                      viewDetails(generation.id);
+                      viewDetails(generation);
                     }}
                   >
                     <EyeIcon className="w-4 h-4" />
+                  </Button>
+                  <Button
+                    className="text-gray-400"
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      copyToClipboard(generation.inputContent);
+                    }}
+                    title="复制提示词"
+                  >
+                    <CopyIcon className="w-4 h-4" />
                   </Button>
                 </div>
               </div>

@@ -2,6 +2,8 @@ import { toast } from "sonner";
 import { onCleanSvgContent } from "./formatSvg";
 
 export function downloadSvgAsPng(svgContent: string, filename = `svg-${Date.now()}.png`, scale = 4) {
+  console.log(svgContent, "svgContent");
+
   // 创建一个临时的 SVG 元素来获取准确尺寸
   const tempDiv = document.createElement("div");
   tempDiv.innerHTML = onCleanSvgContent(svgContent);
@@ -96,7 +98,9 @@ export function downloadSvgAsPng(svgContent: string, filename = `svg-${Date.now(
     URL.revokeObjectURL(url);
   };
 
-  img.onerror = function () {
+  img.onerror = function (error) {
+    console.log(error);
+
     toast.error("SVG 加载失败，无法转换为 PNG");
     URL.revokeObjectURL(url);
   };

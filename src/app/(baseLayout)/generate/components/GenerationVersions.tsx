@@ -3,20 +3,22 @@
 import { DownloadButton } from "@/components/download-button";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { extractSvgContent } from "@/lib/utils";
+import { CollapsibleContent } from "@/components/ui/collapsible-content";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
+import { copyToClipboard, extractSvgContent } from "@/lib/utils";
 import { svgGeneratorControllerGetVersions } from "@/services/svg/svgGenerations";
 import DOMPurify from "dompurify";
-import { ArrowLeftIcon, PencilIcon } from "lucide-react";
+import { ArrowLeftIcon, CopyIcon, PencilIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 interface GenerationVersionsProps {
-  generationId: number;
+  generation: API.SvgGenerationWithVersionData;
   onClose: () => void;
 }
 
-export function GenerationVersions({ generationId, onClose }: GenerationVersionsProps) {
+export function GenerationVersions({ generation, onClose }: GenerationVersionsProps) {
   const [data, setData] = useState<API.SvgVersionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedVersion, setSelectedVersion] = useState<typeVersionData | null>(null);
@@ -26,7 +28,7 @@ export function GenerationVersions({ generationId, onClose }: GenerationVersions
     try {
       setLoading(true);
       const data = await svgGeneratorControllerGetVersions({
-        id: generationId.toString(),
+        id: generation?.id?.toString(),
       });
       setData(data?.[0]);
       if (data.length > 0) {
@@ -47,10 +49,10 @@ export function GenerationVersions({ generationId, onClose }: GenerationVersions
   };
 
   useEffect(() => {
-    if (generationId) {
+    if (generation?.id) {
       fetchVersions();
     }
-  }, [generationId]);
+  }, [generation?.id]);
 
   // 安全处理 SVG 内容
   const sanitizeSvg = (svgContent: string) => {
@@ -93,6 +95,33 @@ export function GenerationVersions({ generationId, onClose }: GenerationVersions
         <h3 className="font-medium">版本历史 (共 {total} 个版本)</h3>
       </div>
 
+      {/* 提示词 */}
+      {generation?.inputContent && (
+        <Card className="my-3 border-none shadow-sm relative">
+          {/* 绝对定位在右上角的复制按钮 */}
+          <div className="absolute -top-1 right-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                copyToClipboard(generation?.inputContent);
+              }}
+              title="复制提示词"
+            >
+              <CopyIcon className="h-4 w-4" />
+            </Button>
+          </div>
+          <CollapsibleContent
+            title={`${generation?.inputContent}`}
+            className="flex-1 border-none"
+            titleClassName="py-1"
+          >
+            <MarkdownRenderer content={generation?.inputContent} className="mt-2 border-t pt-2" />
+          </CollapsibleContent>
+        </Card>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-1 space-y-2">
           {renderData?.map((version: AnyIfEmpty, idx: number) => (
@@ -122,7 +151,7 @@ export function GenerationVersions({ generationId, onClose }: GenerationVersions
                   <h4 className="font-medium">版本 {selectedVersion.versionNumber} 预览</h4>
                   <div className="flex items-center gap-2">
                     <DownloadButton svgContent={extractSvgContent(selectedVersion.content)} />
-                    <Link href={`/editor/${generationId}?version=${selectedVersion.versionNumber - 1}`}>
+                    <Link href={`/editor/${generation?.id}?version=${selectedVersion.versionNumber - 1}`}>
                       <Button variant="ghost" size="sm" className="text-gray-500">
                         编辑
                         <PencilIcon className="w-4 h-4" />

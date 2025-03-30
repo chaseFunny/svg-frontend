@@ -16,13 +16,13 @@ export function SvgViewer({ svgContent, className }: SvgViewerProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // 使用refs存储当前值，避免在事件处理函数中的闭包问题
+  // 使用 refs 存储当前值，避免在事件处理函数中的闭包问题
   const positionRef = useRef(position);
   const dragStartRef = useRef({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const viewerRef = useRef<HTMLDivElement>(null);
 
-  // 同步ref和state
+  // 同步 ref 和 state
   useEffect(() => {
     positionRef.current = position;
   }, [position]);
@@ -57,7 +57,7 @@ export function SvgViewer({ svgContent, className }: SvgViewerProps) {
     dragStartRef.current = { x: e.clientX, y: e.clientY };
   }, []);
 
-  // 使用requestAnimationFrame优化拖动
+  // 使用 requestAnimationFrame 优化拖动
   const handleDrag = useCallback(
     (e: MouseEvent) => {
       if (!isDragging) return;
@@ -99,7 +99,7 @@ export function SvgViewer({ svgContent, className }: SvgViewerProps) {
     };
   }, [isDragging, handleDrag, handleDragEnd]);
 
-  // 全屏模式下按ESC键退出
+  // 全屏模式下按 ESC 键退出
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isFullscreen) {
@@ -125,7 +125,7 @@ export function SvgViewer({ svgContent, className }: SvgViewerProps) {
       <div
         ref={containerRef}
         className={cn(
-          "flex justify-center w-full h-auto bg-white dark:bg-gray-900 ",
+          "flex justify-center w-full h-auto min-h-[400px] bg-white dark:bg-gray-900 ",
           isDragging ? "cursor-grabbing" : "cursor-grab"
         )}
         style={{

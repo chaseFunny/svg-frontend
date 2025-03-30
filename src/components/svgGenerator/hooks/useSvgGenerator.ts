@@ -1,6 +1,7 @@
 "use client";
 import { STYLE_OPTIONS } from "@/constants";
 import { DEFAULT_ASPECT_RATIO } from "@/constants/aspect-ratios";
+import { processStreamingSvg } from "@/lib/processStreamingSvg";
 import { extractErrorMessage, extractSvgContent } from "@/lib/utils";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useSessionStorageState } from "ahooks";
@@ -30,7 +31,6 @@ export function useSvgGenerator(setOpenBuyCard: (open: boolean) => void, searchP
   // 本地状态
   const [isGenerating, setIsGenerating] = useState(false);
   const isGeneratingErrorRef = useRef(false);
-  const [generatedSvg, setGeneratedSvg] = useState<string | null>(null);
 
   // 流式生成状态
   const [streamContent, setStreamContent] = useState<string>("");
@@ -65,7 +65,6 @@ export function useSvgGenerator(setOpenBuyCard: (open: boolean) => void, searchP
     setIsStreaming(false);
     setStreamComplete(false);
     setStreamContent("");
-    setGeneratedSvg(null);
     isGeneratingErrorRef.current = false;
     abortControllerRef.current = null;
   }, []);
@@ -79,13 +78,7 @@ export function useSvgGenerator(setOpenBuyCard: (open: boolean) => void, searchP
         toast.error("请输入描述内容");
         return;
       }
-
-      setIsGenerating(true);
-      setIsStreaming(true);
-      setStreamContent("");
-      setStreamComplete(false);
-      setGeneratedSvg(null);
-      isGeneratingErrorRef.current = false;
+      toast.info("正在生成中...");
       // 创建新的 AbortController 实例
       abortControllerRef.current = new AbortController();
       const signal = abortControllerRef.current.signal;
@@ -131,7 +124,7 @@ export function useSvgGenerator(setOpenBuyCard: (open: boolean) => void, searchP
         const decoder = new TextDecoder();
         let receivedData = "";
         let buffer = "";
-
+        setIsGenerating(true);
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
@@ -170,7 +163,23 @@ export function useSvgGenerator(setOpenBuyCard: (open: boolean) => void, searchP
                   return toast.error(eventData.id === 17 ? extractErrorMessage(eventData.message) : eventData.message);
                 } else if (eventData.chunk && eventData.status === "streaming") {
                   receivedData += eventData.chunk;
-                  setStreamContent(receivedData);
+                  let isRenderPending = false;
+                  // 在浏览器重绘前执行，确保平滑更新
+                  function updateSvgDisplay() {
+                    if (receivedData) {
+                      // 只在动画帧中更新 DOM，减少闪动
+                      setStreamContent(processStreamingSvg(receivedData));
+                    }
+
+                    // 重置渲染标志
+                    isRenderPending = false;
+                  }
+                  // 如果没有挂起的渲染请求，则请求一次渲染
+                  if (!isRenderPending) {
+                    isRenderPending = true;
+                    requestAnimationFrame(updateSvgDisplay);
+                  }
+                  // setStreamContent(processStreamingSvg(receivedData));
                 } else if (eventData.status === "completed") {
                   // 流结束
                   setStreamComplete(true);
@@ -198,7 +207,7 @@ export function useSvgGenerator(setOpenBuyCard: (open: boolean) => void, searchP
         // 提取 SVG 内容
         const svgContent = extractSvgContent(receivedData);
         if (svgContent) {
-          setGeneratedSvg(svgContent);
+          setStreamContent(svgContent);
           if (!isGeneratingErrorRef.current) {
             toast.success("SVG 生成成功");
           }
@@ -206,7 +215,7 @@ export function useSvgGenerator(setOpenBuyCard: (open: boolean) => void, searchP
           // 如果无法提取有效的 SVG 内容，尝试直接从原始字符串中查找 SVG 标签
           const svgMatch = receivedData.match(/<svg[\s\S]*?<\/svg>/i);
           if (svgMatch) {
-            setGeneratedSvg(svgMatch[0]);
+            setStreamContent(svgMatch[0]);
             if (!isGeneratingErrorRef.current) {
               toast.success("SVG 生成成功");
             }
@@ -243,9 +252,9 @@ export function useSvgGenerator(setOpenBuyCard: (open: boolean) => void, searchP
 
   // 下载 SVG
   const downloadSvg = useCallback(() => {
-    if (!generatedSvg) return;
+    if (!streamContent) return;
 
-    const blob = new Blob([generatedSvg], { type: "image/svg+xml" });
+    const blob = new Blob([streamContent], { type: "image/svg+xml" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -255,7 +264,7 @@ export function useSvgGenerator(setOpenBuyCard: (open: boolean) => void, searchP
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     toast.success("SVG 下载成功");
-  }, [generatedSvg]);
+  }, [streamContent]);
 
   useEffect(() => {
     if (streamComplete) {
@@ -270,7 +279,6 @@ export function useSvgGenerator(setOpenBuyCard: (open: boolean) => void, searchP
     selectedAspectRatio: urlAspectRatio,
     setSelectedAspectRatio,
     isGenerating,
-    generatedSvg,
     generateSvg,
     downloadSvg,
     styleOptions: STYLE_OPTIONS,

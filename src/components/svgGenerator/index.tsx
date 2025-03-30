@@ -59,7 +59,6 @@ function SvgDialogContent({ className }: SvgDialogProps) {
     selectedAspectRatio,
     setSelectedAspectRatio,
     isGenerating,
-    generatedSvg,
     generateSvg,
     styleOptions,
     streamContent,
@@ -70,8 +69,8 @@ function SvgDialogContent({ className }: SvgDialogProps) {
   } = useSvgGenerator(setOpenBuyCard, searchParams);
   const [activeTab, setActiveTab] = useState<typeActiveTab>("preview");
   // 添加过渡动画状态
-  const [showStreamContent, setShowStreamContent] = useState(true);
-  const [showSvgResult, setShowSvgResult] = useState(false);
+  const [showStreamContent, setShowStreamContent] = useState(false);
+  const [showSvgResult, setShowSvgResult] = useState(true);
   // 添加切换锁定状态，防止快速点击导致动画异常
   const [isTabSwitching, setIsTabSwitching] = useState(false);
   // 上传文件 ref
@@ -91,10 +90,15 @@ function SvgDialogContent({ className }: SvgDialogProps) {
     };
 
     if (isStreaming) {
-      // 流式生成过程中，始终显示 StreamContent
+      // 流式生成过程中，根据当前激活的标签页显示对应内容
       clearTimeouts();
-      setShowStreamContent(true);
-      setShowSvgResult(false);
+      if (activeTab === "preview") {
+        setShowStreamContent(false);
+        setShowSvgResult(true);
+      } else {
+        setShowStreamContent(true);
+        setShowSvgResult(false);
+      }
       setIsTabSwitching(false);
     } else if (streamComplete) {
       if (activeTab === "preview" && !isTabSwitching) {
@@ -182,8 +186,8 @@ function SvgDialogContent({ className }: SvgDialogProps) {
   /** 重置所有状态 */
   const resetAllState = () => {
     setActiveTab("preview");
-    setShowStreamContent(true);
-    setShowSvgResult(false);
+    setShowStreamContent(false);
+    setShowSvgResult(true);
     setIsTabSwitching(false);
   };
 
@@ -218,30 +222,28 @@ function SvgDialogContent({ className }: SvgDialogProps) {
             </div>
 
             {/* 最终 SVG 结果 - 添加过渡动画 */}
-            {generatedSvg && (
-              <div
-                className={cn(
-                  "transition-all duration-300 ease-out absolute w-full",
-                  showSvgResult
-                    ? "opacity-100 z-20 transform translate-y-0"
-                    : "opacity-0 z-0 transform translate-y-1 scale-102"
-                )}
-              >
-                <SvgResult
-                  generateId={generateId}
-                  svgContent={extractSvgContent(generatedSvg)}
-                  toggleTab={handleToggleTab}
-                  activeTab={activeTab}
-                />
-              </div>
-            )}
+            <div
+              className={cn(
+                "transition-all duration-300 ease-out absolute w-full min-h-[250px]",
+                showSvgResult
+                  ? "opacity-100 z-20 transform translate-y-0"
+                  : "opacity-0 z-0 transform translate-y-1 scale-102"
+              )}
+            >
+              <SvgResult
+                generateId={generateId}
+                svgContent={extractSvgContent(streamContent)}
+                toggleTab={handleToggleTab}
+                activeTab={activeTab}
+              />
+            </div>
 
             {/* 添加一个占位元素保持布局稳定 */}
             <div aria-hidden="true" className="invisible opacity-0 pointer-events-none">
-              {activeTab === "preview" && generatedSvg && !isStreaming ? (
+              {activeTab === "preview" && streamContent && !isStreaming ? (
                 <SvgResult
                   generateId={generateId}
-                  svgContent={extractSvgContent(generatedSvg)}
+                  svgContent={extractSvgContent(streamContent)}
                   toggleTab={handleToggleTab}
                   activeTab={activeTab}
                 />
